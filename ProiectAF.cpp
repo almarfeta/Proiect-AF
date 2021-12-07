@@ -60,6 +60,8 @@ private:
     void dfs_biconex(int i, int& index, vector <int>& niv, vector <int>& niv_min, vector <int>& tata, stack <pair<int, int>>& muchii, int& nr_comp, vector <vector <pair<int, int>>>& solutie);
     int reprez_kruskal(int nod, vector <int>& tata);
     void reuneste_kruskal(int ru, int rv, vector <int>& tata, vector <int>& h);
+    int BFS_darb(int &start);
+    bool bfs_flux(int s, int t, vector <int> &tata, vector <vector <int>> &flux);
 
 public:
     vector <int> BFS(int start);
@@ -73,6 +75,9 @@ public:
     vector <bool> disjoint();
     vector <int> bellman_ford(vector <vector <pair <int, int>>> lista_costuri);
     vector <int> dijkstra(vector <vector <pair <int, int>>> lista_costuri);
+    void floyd_warshall(vector <vector <int>> &matrice_costuri);
+    int diametru();
+    int edmond_karp(vector <vector <int>>& flux);
 };
 
 istream& operator>>(istream& in, Graf& g)
@@ -438,10 +443,79 @@ void infoarena_dijkstra() {
     in.close();
     out.close();
 }
+void infoarena_floydwarshall() {
+    ifstream in("royfloyd.in");
+    ofstream out("royfloyd.out");
+
+    int n;
+    in >> n;
+    vector <vector <int>> d(n + 1, vector <int>(n + 1, 0));
+    for (int i = 1; i <= n; i++)
+        for (int j = 1; j <= n; j++)
+            in >> d[i][j];
+    Graf g(1, n, -1);
+
+    g.floyd_warshall(d);
+
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= n; j++)
+            out << d[i][j] << " ";
+        out << "\n";
+    }
+
+    in.close();
+    out.close();
+}
+void infoarena_diametru() {
+    ifstream in("darb.in");
+    ofstream out("darb.out");
+
+    int n, m;
+    in >> n;
+    m = n - 1;
+    vector <vector <int>> v;
+    v.resize(n + 1);
+    for (int i = 0; i < m; i++) {
+        int x, y;
+        in >> x >> y;
+        v[x].push_back(y);
+        v[y].push_back(x);
+    }
+    Graf g(0, n, m, v);
+    
+    int d = g.diametru();
+    out << d;
+
+    in.close();
+    out.close();
+}
+void infoarena_maxflow() {
+    ifstream in("maxflow.in");
+    ofstream out("maxflow.out");
+
+    int n, m;
+    vector <vector <int>> v;
+    in >> n >> m;
+    v.resize(n + 1);
+    vector <vector <int>> c(n + 1, vector <int>(n + 1, 0));
+    for (int i = 0; i < m; i++) {
+        int x, y, z;
+        in >> x >> y >> z;
+        v[x].push_back(y);
+        v[y].push_back(x);
+        c[x][y] = z;
+    }
+    Graf g(1, n, m, v);
+
+    out << g.edmond_karp(c);
+
+    in.close();
+    out.close();
+}
 
 int main()
 {
-    infoarena_bellmanford();
+    infoarena_maxflow();
     return 0;
 }
 
@@ -794,4 +868,85 @@ vector <int> Graf::dijkstra(vector <vector <pair <int, int>>> lista_costuri) {
     }
 
     return distanta;
+}
+void Graf::floyd_warshall(vector <vector <int>> &matrice_costuri) {
+    for (int k = 1; k <= nr_noduri; k++)
+        for (int i = 1; i <= nr_noduri; i++)
+            for (int j = 1; j <= nr_noduri; j++)
+                if (matrice_costuri[i][k] != 0 && matrice_costuri[k][j] != 0 && i != j)
+                    if(matrice_costuri[i][j] > matrice_costuri[i][k] + matrice_costuri[k][j] || matrice_costuri[i][j] == 0)
+                        matrice_costuri[i][j] = matrice_costuri[i][k] + matrice_costuri[k][j];
+}
+int Graf::BFS_darb(int &start) {
+    vector <int> dist(nr_noduri + 1, 0);
+    queue <int> coada;
+    int diam;
+
+    coada.push(start);
+    dist[start] = 1;
+    diam = dist[start];
+
+    while (!coada.empty()) {
+        int nod_curent = coada.front();
+        start = nod_curent;
+        coada.pop();
+        for (int i = 0; i < lista_vecini[nod_curent].size(); i++)
+            if (dist[lista_vecini[nod_curent][i]] == 0) {
+                coada.push(lista_vecini[nod_curent][i]);
+                dist[lista_vecini[nod_curent][i]] = dist[nod_curent] + 1;
+                diam = dist[lista_vecini[nod_curent][i]];
+            }
+    }
+
+    return diam;
+}
+int Graf::diametru() {
+    int start = 1;
+    int diam = BFS_darb(start);
+    diam = BFS_darb(start);
+    return diam;
+}
+bool Graf::bfs_flux(int s, int t, vector <int> &tata, vector <vector <int>>& flux) {
+    vector <int> viz(nr_noduri + 1, 0);
+    queue <int> coada;
+
+    coada.push(s);
+    viz[s] = 1;
+    while (!coada.empty()) {
+        int nod_curent = coada.front();
+        coada.pop();
+        for (int i = 0; i < lista_vecini[nod_curent].size(); i++) {
+            if (viz[lista_vecini[nod_curent][i]] == 0 && flux[nod_curent][lista_vecini[nod_curent][i]] > 0) {
+                if (lista_vecini[nod_curent][i] == t) {
+                    tata[t] = nod_curent;
+                    return true;
+                }
+                coada.push(lista_vecini[nod_curent][i]);
+                viz[lista_vecini[nod_curent][i]] = 1;
+                tata[lista_vecini[nod_curent][i]] = nod_curent;
+            }
+        }
+    }
+    return false;
+}
+int Graf::edmond_karp(vector <vector <int>>& flux) {
+    int flux_max = 0;
+    vector <int> tata(nr_noduri + 1, 0);
+    while (bfs_flux(1, nr_noduri, tata, flux) == true) {
+        int nod = nr_noduri;
+        int flux_min = 0;
+        while (nod != 1) {
+            if (flux_min == 0 || flux[tata[nod]][nod] < flux_min)
+                flux_min = flux[tata[nod]][nod];
+            nod = tata[nod];
+        }
+        nod = nr_noduri;
+        while (nod != 1) {
+            flux[tata[nod]][nod] = flux[tata[nod]][nod] - flux_min;
+            flux[nod][tata[nod]] = flux_min;
+            nod = tata[nod];
+        }
+        flux_max = flux_max + flux_min;
+    }
+    return flux_max;
 }
