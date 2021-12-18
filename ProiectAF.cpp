@@ -4,6 +4,7 @@
 #include <queue>
 #include <stack>
 #include <algorithm>
+#include <limits.h>
 
 using namespace std;
 
@@ -51,7 +52,7 @@ public:
 
     friend istream& operator>>(istream& in, Graf& g);
     friend ostream& operator<<(ostream& out, const Graf& g);
-   
+
 private:
     void DFS(int start, vector <int>& viz);
     void dfs_muchiiIntoarcere(int i, vector <int>& viz, vector <int>& niv, vector<int>& niv_min, vector <vector<int>>& solutie);
@@ -60,8 +61,13 @@ private:
     void dfs_biconex(int i, int& index, vector <int>& niv, vector <int>& niv_min, vector <int>& tata, stack <pair<int, int>>& muchii, int& nr_comp, vector <vector <pair<int, int>>>& solutie);
     int reprez_kruskal(int nod, vector <int>& tata);
     void reuneste_kruskal(int ru, int rv, vector <int>& tata, vector <int>& h);
-    int BFS_darb(int &start);
-    bool bfs_flux(int s, int t, vector <int> &tata, vector <vector <int>> &flux);
+    int BFS_darb(int& start);
+    bool bfs_flux(int s, int t, vector <int>& tata, vector <vector <int>>& flux);
+    void euler(int nod, vector <int>& viz, vector <vector <pair <int, int>>>& lista_vec, vector <int>& solutie);
+    void dfs_hamilton(int nod, vector <int>& viz, int nr_noduri_vizitate, int cost, int& cost_min, vector <vector <pair <int, int>>>& lista_costuri);
+    bool bfs_cuplaj(vector <int> &pereche_U, vector <int>& pereche_V, vector <int>& dist);
+    bool dfs_cuplaj(int nod, vector <int>& pereche_U, vector <int>& pereche_V, vector <int>& dist);
+
 
 public:
     vector <int> BFS(int start);
@@ -75,9 +81,12 @@ public:
     vector <bool> disjoint();
     vector <int> bellman_ford(vector <vector <pair <int, int>>> lista_costuri);
     vector <int> dijkstra(vector <vector <pair <int, int>>> lista_costuri);
-    void floyd_warshall(vector <vector <int>> &matrice_costuri);
+    void floyd_warshall(vector <vector <int>>& matrice_costuri);
     int diametru();
     int edmond_karp(vector <vector <int>>& flux);
+    vector <int> ciclueuler(vector <vector <pair <int, int>>>& lista_vec);
+    int cicluhamilton(vector <vector <pair <int, int>>>& lista_costuri);
+    vector <pair <int, int>> hopcroft(int n, int m);
 };
 
 istream& operator>>(istream& in, Graf& g)
@@ -98,7 +107,7 @@ istream& operator>>(istream& in, Graf& g)
             g.lista_vecini[y].push_back(x);
         }
     }
-    else if(g.tip == 1) {
+    else if (g.tip == 1) {
         cout << "\nIntroduceti numarul de noduri: ";
         cin >> g.nr_noduri;
         cout << "\nIntroduceti numarul de arce: ";
@@ -414,7 +423,7 @@ void infoarena_bellmanford() {
 
     in.close();
     out.close();
-} 
+}
 void infoarena_dijkstra() {
     ifstream in("dijkstra.in");
     ofstream out("dijkstra.out");
@@ -427,7 +436,7 @@ void infoarena_dijkstra() {
     for (int i = 0; i < m; i++) {
         int x, y, c;
         in >> x >> y >> c;
-        v[x].push_back(make_pair(y,c));
+        v[x].push_back(make_pair(y, c));
     }
     Graf g(1, n, m);
 
@@ -482,7 +491,7 @@ void infoarena_diametru() {
         v[y].push_back(x);
     }
     Graf g(0, n, m, v);
-    
+
     int d = g.diametru();
     out << d;
 
@@ -512,10 +521,82 @@ void infoarena_maxflow() {
     in.close();
     out.close();
 }
+void infoarena_euler() {
+    ifstream in("ciclueuler.in");
+    ofstream out("ciclueuler.out");
+
+    int n, m;
+    vector <vector <pair <int, int>>> v;
+    in >> n >> m;
+    v.resize(n + 1);
+    for (int i = 0; i < m; i++) {
+        int x, y;
+        in >> x >> y;
+        v[x].push_back(make_pair(y, i + 1));
+        v[y].push_back(make_pair(x, i + 1));
+    }
+    Graf g(0, n, m);
+
+    vector <int> sol = g.ciclueuler(v);
+    for (int i = 0; i < sol.size(); i++)
+        out << sol[i] << " ";
+
+    in.close();
+    out.close();
+}
+void infoarena_hamilton() {
+    ifstream in("hamilton.in");
+    ofstream out("hamilton.out");
+
+    int n, m;
+    vector <vector <pair <int, int>>> v;
+    in >> n >> m;
+    v.resize(n);
+    for (int i = 0; i < m; i++) {
+        int x, y, c;
+        in >> x >> y >> c;
+        v[x].push_back(make_pair(y, c));
+    }
+    Graf g(1, n, m);
+
+    int sol = g.cicluhamilton(v);
+    if (sol == 0)
+        out << "Nu exista solutie";
+    else
+        out << sol;
+
+    in.close();
+    out.close();
+}
+void infoarena_bipartit() {
+    ifstream in("cuplaj.in");
+    ofstream out("cuplaj.out");
+
+    int n, m, e;
+    in >> n >> m >> e;
+    vector <vector <int>> v;
+    v.resize(n + 1);
+    for (int i = 0; i < e; i++) {
+        int x, y;
+        in >> x >> y;
+        v[x].push_back(y);
+    }
+    Graf g(0, n, e, v);
+
+    vector <pair <int, int>> sol;
+    sol = g.hopcroft(n, m);
+
+    out << sol.back().first << "\n";
+    for (int i = 0; i < sol.size() - 1; i++)
+        out << sol[i].first << " " << sol[i].second << "\n";
+
+    in.close();
+    out.close();
+}
 
 int main()
 {
-    infoarena_maxflow();
+    infoarena_bipartit();
     return 0;
 }
 
@@ -752,7 +833,7 @@ vector <vector <pair <int, int>>> Graf::biconex() {
 
     return solutie;
 }
-int Graf::reprez_kruskal(int nod, vector <int> &tata) {
+int Graf::reprez_kruskal(int nod, vector <int>& tata) {
     while (tata[nod] != 0)
         nod = tata[nod];
     return nod;
@@ -844,7 +925,7 @@ vector <int> Graf::bellman_ford(vector <vector <pair <int, int>>> lista_costuri)
             }
         }
     }
-    
+
     return distanta;
 }
 vector <int> Graf::dijkstra(vector <vector <pair <int, int>>> lista_costuri) {
@@ -869,15 +950,15 @@ vector <int> Graf::dijkstra(vector <vector <pair <int, int>>> lista_costuri) {
 
     return distanta;
 }
-void Graf::floyd_warshall(vector <vector <int>> &matrice_costuri) {
+void Graf::floyd_warshall(vector <vector <int>>& matrice_costuri) {
     for (int k = 1; k <= nr_noduri; k++)
         for (int i = 1; i <= nr_noduri; i++)
             for (int j = 1; j <= nr_noduri; j++)
                 if (matrice_costuri[i][k] != 0 && matrice_costuri[k][j] != 0 && i != j)
-                    if(matrice_costuri[i][j] > matrice_costuri[i][k] + matrice_costuri[k][j] || matrice_costuri[i][j] == 0)
+                    if (matrice_costuri[i][j] > matrice_costuri[i][k] + matrice_costuri[k][j] || matrice_costuri[i][j] == 0)
                         matrice_costuri[i][j] = matrice_costuri[i][k] + matrice_costuri[k][j];
 }
-int Graf::BFS_darb(int &start) {
+int Graf::BFS_darb(int& start) {
     vector <int> dist(nr_noduri + 1, 0);
     queue <int> coada;
     int diam;
@@ -906,7 +987,7 @@ int Graf::diametru() {
     diam = BFS_darb(start);
     return diam;
 }
-bool Graf::bfs_flux(int s, int t, vector <int> &tata, vector <vector <int>>& flux) {
+bool Graf::bfs_flux(int s, int t, vector <int>& tata, vector <vector <int>>& flux) {
     vector <int> viz(nr_noduri + 1, 0);
     queue <int> coada;
 
@@ -949,4 +1030,102 @@ int Graf::edmond_karp(vector <vector <int>>& flux) {
         flux_max = flux_max + flux_min;
     }
     return flux_max;
+}
+void Graf::euler(int nod, vector <int>& viz, vector <vector <pair <int, int>>>& lista_vec, vector <int>& solutie) {
+    while (!lista_vec[nod].empty()) {
+        int vecin = lista_vec[nod][lista_vec[nod].size() - 1].first;
+        int nr_muchie = lista_vec[nod][lista_vec[nod].size() - 1].second;
+        lista_vec[nod].pop_back();
+        if (viz[nr_muchie] == 0) {
+            viz[nr_muchie] = 1;
+            euler(vecin, viz, lista_vec, solutie);
+        }
+    }
+    solutie.push_back(nod);
+}
+vector <int> Graf::ciclueuler(vector <vector <pair <int, int>>>& lista_vec) {
+    vector <int> solutie;
+
+    for (int i = 1; i <= nr_noduri; i++)
+        if (lista_vec[i].size() % 2 != 0)
+            return { -1 };
+
+    vector <int> viz(nr_muchii + 1, 0);
+    euler(1, viz, lista_vec, solutie);
+
+    return solutie;
+}
+void Graf::dfs_hamilton(int nod, vector <int>& viz, int nr_noduri_vizitate, int cost, int& cost_min, vector <vector <pair <int, int>>>& lista_costuri) {
+    viz[nod] = 1;
+    for (int i = 0; i < lista_costuri[nod].size(); i++) {
+        if (viz[lista_costuri[nod][i].first] == 0)
+            dfs_hamilton(lista_costuri[nod][i].first, viz, nr_noduri_vizitate + 1, cost + lista_costuri[nod][i].second, cost_min, lista_costuri);
+        if (nr_noduri_vizitate == nr_noduri - 1 && lista_costuri[nod][i].first == 0)
+            if (cost + lista_costuri[nod][i].second < cost_min || cost_min == 0)
+                cost_min = cost + lista_costuri[nod][i].second;
+    }
+    viz[nod] = 0;
+}
+int Graf::cicluhamilton(vector <vector <pair <int, int>>>& lista_costuri) {
+    vector <int> viz(nr_noduri, 0);
+    int cost_min = 0;
+    dfs_hamilton(0, viz, 0, 0, cost_min, lista_costuri);
+    return cost_min;
+}
+bool Graf::bfs_cuplaj(vector <int>& pereche_U, vector <int>& pereche_V, vector <int>& dist) {
+    queue <int> Q;
+    int INF = INT_MAX;
+    for (int i = 1; i < pereche_U.size(); i++)
+        if (pereche_U[i] == 0) {
+            dist[i] = 0;
+            Q.push(i);
+        }
+        else
+            dist[i] = INF;
+    dist[0] = INF;
+    while (!Q.empty()) {
+        int nod = Q.front();
+        Q.pop();
+        if (dist[nod] < dist[0])
+            for (int i = 0; i < lista_vecini[nod].size(); i++)
+                if (dist[pereche_V[lista_vecini[nod][i]]] == INF) {
+                    dist[pereche_V[lista_vecini[nod][i]]] = dist[nod] + 1;
+                    Q.push(pereche_V[lista_vecini[nod][i]]);
+                }
+    }
+    if (dist[0] != INF)
+        return true;
+    else
+        return false;
+}
+bool Graf::dfs_cuplaj(int nod, vector <int>& pereche_U, vector <int>& pereche_V, vector <int>& dist) {
+    int INF = INT_MAX;
+    if (nod != 0) {
+        for (int i = 0; i < lista_vecini[nod].size(); i++)
+            if (dist[pereche_V[lista_vecini[nod][i]]] == dist[nod] + 1)
+                if (dfs_cuplaj(pereche_V[lista_vecini[nod][i]], pereche_U, pereche_V, dist) == true) {
+                    pereche_V[lista_vecini[nod][i]] = nod;
+                    pereche_U[nod] = lista_vecini[nod][i];
+                    return true;
+                }
+        dist[nod] = INF;
+        return false;
+    }
+    return true;
+}
+vector <pair <int, int>> Graf::hopcroft(int nr_noduri_U, int nr_noduri_V) {
+    vector <int> pereche_U(nr_noduri_U + 1, 0);
+    vector <int> pereche_V(nr_noduri_V + 1, 0);
+    vector <int> dist(nr_noduri_U + 1, 0);
+    vector <pair <int, int>> sol;
+    int nr_cmax = 0;
+    while (bfs_cuplaj(pereche_U, pereche_V, dist) == true)
+        for (int i = 1; i <= nr_noduri_U; i++)
+            if (pereche_U[i] == 0 && dfs_cuplaj(i, pereche_U, pereche_V, dist) == true)
+                nr_cmax++;
+    for (int i = 1; i <= nr_noduri_U; i++)
+        if (pereche_U[i] != 0)
+            sol.push_back(make_pair(i, pereche_U[i]));
+    sol.push_back(make_pair(nr_cmax, 0));
+    return sol;
 }
