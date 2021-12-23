@@ -8,6 +8,7 @@
 
 using namespace std;
 
+// O structura ajutatoare pentru a retine un vector de muchii cu costuri
 struct cost {
     int first;
     int second;
@@ -16,13 +17,16 @@ struct cost {
 
 class Graf
 {
-    int tip;
-    int nr_noduri;
-    int nr_muchii;
-    vector <vector <int>> lista_vecini;
-    vector <cost> lista_muchii;
+    int tip; // Tipul grafului: 0 - Neorientat, 1 - Orientat
+    int nr_noduri; // Numarul de noduri
+    int nr_muchii; // Numarul de muchii
+    vector <vector <int>> lista_vecini; // Graful reprezentat prin lista vecinilor fiecarui nod
+    vector <cost> lista_muchii; // Graful reprezentat printr-un vector de muchii cu costuri
+    vector <vector <pair <int, int>>> lista_costuri; // Graful reprezentat prin lista vecinilor cu costuri 
 
 public:
+    //  Definirea mai multor constructori in functie de felul in care
+    // vom vrea sa fie reprezentat graful dat.
     Graf() {
         tip = 0;
         nr_noduri = 0;
@@ -48,13 +52,21 @@ public:
         this->nr_muchii = nr_muchii;
         this->lista_muchii = lista_muchii;
     }
+    Graf(int tip, int nr_noduri, int nr_muchii, vector <vector <pair <int, int>>> lista_costuri) {
+        this->tip = tip;
+        this->nr_noduri = nr_noduri;
+        this->nr_muchii = nr_muchii;
+        this->lista_costuri = lista_costuri;
+    }
     ~Graf() { }
 
+    //  Supraincarcarea operatorilor de citire si afisare
+    // nefolositi in problemele rezolvare, dar utili
+    // in cazul in care se vrea o citire/afisare mai explicita
     friend istream& operator>>(istream& in, Graf& g);
     friend ostream& operator<<(ostream& out, const Graf& g);
 
-private:
-    void DFS(int start, vector <int>& viz);
+private: // O colectie de functii ajutatoare celor principale
     void dfs_muchiiIntoarcere(int i, vector <int>& viz, vector <int>& niv, vector<int>& niv_min, vector <vector<int>>& solutie);
     void dfs_tare_conex(int i, vector <int>& onStack, vector <int>& niv, vector <int>& niv_min, int& index, stack <int>& noduri, int& nr_comp, vector <vector<int>>& solutie);
     void dfs_sortare(int nod_curent, vector <int>& viz, vector <int>& solutie);
@@ -64,28 +76,28 @@ private:
     int BFS_darb(int& start);
     bool bfs_flux(int s, int t, vector <int>& tata, vector <vector <int>>& flux);
     void euler(int nod, vector <int>& viz, vector <vector <pair <int, int>>>& lista_vec, vector <int>& solutie);
-    void dfs_hamilton(int nod, vector <int>& viz, int nr_noduri_vizitate, int cost, int& cost_min, vector <vector <pair <int, int>>>& lista_costuri);
+    void dfs_hamilton(int nod, vector <int>& viz, int nr_noduri_vizitate, int cost, int& cost_min);
     bool bfs_cuplaj(vector <int> &pereche_U, vector <int>& pereche_V, vector <int>& dist);
     bool dfs_cuplaj(int nod, vector <int>& pereche_U, vector <int>& pereche_V, vector <int>& dist);
 
-
-public:
+public: // Functiile apelabile pentru un graf dat
     vector <int> BFS(int start);
+    void DFS(int start, vector <int>& viz);
     int comp_conexe();
     bool havel_hakimi(int seq_len, vector <int> seq);
-    vector <vector <int>> criticalConnections();
+    vector <vector <int>> muchii_critice();
     vector <vector <int>> tare_conex();
     vector <int> sortare_top();
     vector <vector <pair <int, int>>> biconex();
     vector <pair <int, int>> kruskal();
     vector <bool> disjoint();
-    vector <int> bellman_ford(vector <vector <pair <int, int>>> lista_costuri);
-    vector <int> dijkstra(vector <vector <pair <int, int>>> lista_costuri);
+    vector <int> bellman_ford();
+    vector <int> dijkstra();
     void floyd_warshall(vector <vector <int>>& matrice_costuri);
     int diametru();
     int edmond_karp(vector <vector <int>>& flux);
     vector <int> ciclueuler(vector <vector <pair <int, int>>>& lista_vec);
-    int cicluhamilton(vector <vector <pair <int, int>>>& lista_costuri);
+    int cicluhamilton();
     vector <pair <int, int>> hopcroft(int n, int m);
 };
 
@@ -157,7 +169,12 @@ ostream& operator<<(ostream& out, const Graf& g)
     return out;
 }
 
+// O colectie de metode care rezolva problemele date
 void infoarena_bfs() {
+    //  Se da un graf orientat si un nod de start.
+    //  Se cere sa se afiseze distanta de la nodul de start pana la
+    // celelate noduri sau -1 in cazul in care nu se poate ajunge la el.
+
     ifstream in("bfs.in");
     ofstream out("bfs.out");
 
@@ -182,6 +199,10 @@ void infoarena_bfs() {
     out.close();
 }
 void infoarena_dfs() {
+    //  Se da un graf neorientat.
+    //  Se cere sa se afiseze numarul de componente conexe ale grafului
+    // folosindu-se un DFS.
+
     ifstream in("dfs.in");
     ofstream out("dfs.out");
 
@@ -204,6 +225,10 @@ void infoarena_dfs() {
     out.close();
 }
 void rezolva_havel() {
+    //  Se da o secventa de numere.
+    //  Se cere sa se afiseze daca se poate sau nu sa se formeze
+    // un graf folosind secventa de numere data.
+
     ifstream in("havel.in");
     ofstream out("havel.out");
 
@@ -227,6 +252,10 @@ void rezolva_havel() {
     out.close();
 }
 void leetcode_criticalCon() {
+    //  Se da un graf neorientat.
+    //  Se cere sa se afiseze numarul de muchii critice alea grafului
+    // si lista acestora.
+
     ifstream in("critcon.in");
     ofstream out("critcon.out");
 
@@ -244,7 +273,7 @@ void leetcode_criticalCon() {
     Graf g(0, n, m, v);
 
     vector <vector <int>> solutie;
-    solutie = g.criticalConnections();
+    solutie = g.muchii_critice();
     for (int i = 0; i < solutie.size(); i++)
         out << solutie[i][0] << " " << solutie[i][1] << "\n";
 
@@ -252,6 +281,10 @@ void leetcode_criticalCon() {
     out.close();
 }
 void infoarena_ctc() {
+    //  Se da un graf orientat.
+    //  Se cere sa se afiseze numarul de componente tare conexe ale grafului,
+    // precum si care sunt nodurile care le formeaza.
+
     ifstream in("ctc.in");
     ofstream out("ctc.out");
 
@@ -282,6 +315,9 @@ void infoarena_ctc() {
     out.close();
 }
 void infoarena_sortaret() {
+    //  Se da un graf orientat.
+    //  Se cere sa se afiseze sortarea topologica a nodurilor grafului dat.
+
     ifstream in("sortaret.in");
     ofstream out("sortaret.out");
 
@@ -306,6 +342,10 @@ void infoarena_sortaret() {
     out.close();
 }
 void infoarena_biconex() {
+    //  Se da un graf neorientat.
+    //  Se cere sa se afiseze numarul de componente biconexe ale grafului,
+    // precum si nodurile care compun fiecare componenta.
+
     ifstream in("biconex.in");
     ofstream out("biconex.out");
 
@@ -346,6 +386,11 @@ void infoarena_biconex() {
     out.close();
 }
 void infoarena_apm() {
+    //  Se da un graf neorientat cu costuri.
+    //  Se cere sa se afiseze costul total al arborelui partial de cost minim,
+    // numarul de muchii ale acestuia, precum si vectorul muchiilor ce fac parte
+    // din el.
+
     ifstream in("apm.in");
     ofstream out("apm.out");
 
@@ -372,6 +417,10 @@ void infoarena_apm() {
     out.close();
 }
 void infoarena_disjoint() {
+    //  Se dau mai multe triplete de numere de format (cod, x, y) cu semnificatia urmatoare:
+    // cod = 1  =>  Se cere sa se reuneasca multimile in care se afla x si y.
+    // cod = 2  =>  Se cere sa se afiseze daca x si y fac parte din aceiasi multime sau nu.
+
     ifstream in("disjoint.in");
     ofstream out("disjoint.out");
 
@@ -384,6 +433,11 @@ void infoarena_disjoint() {
         in >> cod >> x >> y;
         v.push_back({ x,y,cod });
     }
+
+    //  Pentru aceasta problema am folosit atributele clasei cu urmatoarea semnificatie:
+    // nr_noduri = numarul de multimi
+    // nr_muchii = numarul de operatii
+    // lista_muchii = lista tripletelor de forma (cod, x, y)
     Graf g(0, n, m, v);
 
     vector <bool> solutie;
@@ -398,6 +452,10 @@ void infoarena_disjoint() {
     out.close();
 }
 void infoarena_bellmanford() {
+    //  Se da un graf orientat cu costuri, care pot fi si negative.
+    //  Se cere sa se afiseze costul minim al unui lant de la nodul 1 la fiecare nod,
+    // sau un mesaj in cazul in care graful are cicluri negative.
+
     ifstream in("bellmanford.in");
     ofstream out("bellmanford.out");
 
@@ -411,10 +469,10 @@ void infoarena_bellmanford() {
         in >> x >> y >> c;
         v[x].push_back(make_pair(y, c));
     }
-    Graf g(1, n, m);
+    Graf g(1, n, m, v);
 
     vector <int> solutie;
-    solutie = g.bellman_ford(v);
+    solutie = g.bellman_ford();
     if (!solutie.empty())
         for (int i = 2; i <= n; i++)
             out << solutie[i] << " ";
@@ -425,6 +483,9 @@ void infoarena_bellmanford() {
     out.close();
 }
 void infoarena_dijkstra() {
+    //  Se da un graf orientat cu costuri pozitive.
+    //  Se cere sa se afiseze costul minim al unui lant de la nodul 1 la fiecare nod.
+
     ifstream in("dijkstra.in");
     ofstream out("dijkstra.out");
 
@@ -438,11 +499,11 @@ void infoarena_dijkstra() {
         in >> x >> y >> c;
         v[x].push_back(make_pair(y, c));
     }
-    Graf g(1, n, m);
+    Graf g(1, n, m, v);
 
     vector <int> solutie;
-    solutie = g.dijkstra(v);
-    int inf = 0x3f3f3f3f;
+    solutie = g.dijkstra();
+    int inf = INT_MAX;
     for (int i = 2; i <= n; i++)
         if (solutie[i] == inf)
             out << 0 << " ";
@@ -453,6 +514,9 @@ void infoarena_dijkstra() {
     out.close();
 }
 void infoarena_floydwarshall() {
+    //  Se da un graf orientat cu costuri.
+    //  Se cere sa se afiseze matricea drumurilor de cost minim.
+
     ifstream in("royfloyd.in");
     ofstream out("royfloyd.out");
 
@@ -476,6 +540,8 @@ void infoarena_floydwarshall() {
     out.close();
 }
 void infoarena_diametru() {
+    //  Se da un arbore si se cere afisarea diametrului sau.
+
     ifstream in("darb.in");
     ofstream out("darb.out");
 
@@ -499,6 +565,9 @@ void infoarena_diametru() {
     out.close();
 }
 void infoarena_maxflow() {
+    //  Se da un graf orientat cu fluxuri.
+    //  Se cere afisarea fluxului maxim ce poate sa ajunga din nodul 1 la nodul N.
+
     ifstream in("maxflow.in");
     ofstream out("maxflow.out");
 
@@ -522,6 +591,9 @@ void infoarena_maxflow() {
     out.close();
 }
 void infoarena_euler() {
+    //  Se da un multigraf.
+    //  Se cere sa se afiseze nodurile care alcatuiesc un ciclu eulerian.
+
     ifstream in("ciclueuler.in");
     ofstream out("ciclueuler.out");
 
@@ -545,6 +617,9 @@ void infoarena_euler() {
     out.close();
 }
 void infoarena_hamilton() {
+    //  Se da un graf orientat cu costuri.
+    //  Se cere sa se afiseze costul minim al unui ciclu hamiltonian.
+
     ifstream in("hamilton.in");
     ofstream out("hamilton.out");
 
@@ -557,9 +632,9 @@ void infoarena_hamilton() {
         in >> x >> y >> c;
         v[x].push_back(make_pair(y, c));
     }
-    Graf g(1, n, m);
+    Graf g(1, n, m, v);
 
-    int sol = g.cicluhamilton(v);
+    int sol = g.cicluhamilton();
     if (sol == 0)
         out << "Nu exista solutie";
     else
@@ -569,6 +644,9 @@ void infoarena_hamilton() {
     out.close();
 }
 void infoarena_bipartit() {
+    //  Se da un graf neorientat bipartit.
+    //  Se cere sa se afiseze un cuplaj maxim din graf.
+
     ifstream in("cuplaj.in");
     ofstream out("cuplaj.out");
 
@@ -596,14 +674,17 @@ void infoarena_bipartit() {
 
 int main()
 {
-    infoarena_bipartit();
+    //  Pentru rezolvarea unei anumite probleme date pe infoarena/leetcode
+    // doar apelati metoda respectiva.
+    //  Datele de intrare si cele de iesire se vor scrie in fisierele 
+    // corespunzatoare problemei.
+    infoarena_dfs();
     return 0;
 }
 
 
 
 vector <int> Graf::BFS(int start) {
-
     queue <int> bfs_tree;
     vector <int> viz(nr_noduri + 1, -1);
 
@@ -699,7 +780,7 @@ void Graf::dfs_muchiiIntoarcere(int i, vector <int>& viz, vector <int>& niv, vec
                 niv_min[i] = min(niv_min[i], niv[lista_vecini[i][j]]);
         }
 }
-vector <vector <int>> Graf::criticalConnections() {
+vector <vector <int>> Graf::muchii_critice() {
     vector <vector<int>> muchii_crit;
     vector <int> viz(nr_noduri + 1, 0);
     vector <int> niv;
@@ -896,8 +977,8 @@ vector <bool> Graf::disjoint() {
 
     return solutie;
 }
-vector <int> Graf::bellman_ford(vector <vector <pair <int, int>>> lista_costuri) {
-    int inf = 0x3f3f3f3f;
+vector <int> Graf::bellman_ford() {
+    int inf = INT_MAX;
     vector <int> distanta(nr_noduri + 1, inf);
     queue <int> coada;
     vector <bool> inCoada(nr_noduri + 1, false);
@@ -928,8 +1009,8 @@ vector <int> Graf::bellman_ford(vector <vector <pair <int, int>>> lista_costuri)
 
     return distanta;
 }
-vector <int> Graf::dijkstra(vector <vector <pair <int, int>>> lista_costuri) {
-    int inf = 0x3f3f3f3f;
+vector <int> Graf::dijkstra() {
+    int inf = INT_MAX;
     vector <int> distanta(nr_noduri + 1, inf);
     priority_queue <pair <int, int>> min_heap;
 
@@ -1055,21 +1136,21 @@ vector <int> Graf::ciclueuler(vector <vector <pair <int, int>>>& lista_vec) {
 
     return solutie;
 }
-void Graf::dfs_hamilton(int nod, vector <int>& viz, int nr_noduri_vizitate, int cost, int& cost_min, vector <vector <pair <int, int>>>& lista_costuri) {
+void Graf::dfs_hamilton(int nod, vector <int>& viz, int nr_noduri_vizitate, int cost, int& cost_min) {
     viz[nod] = 1;
     for (int i = 0; i < lista_costuri[nod].size(); i++) {
         if (viz[lista_costuri[nod][i].first] == 0)
-            dfs_hamilton(lista_costuri[nod][i].first, viz, nr_noduri_vizitate + 1, cost + lista_costuri[nod][i].second, cost_min, lista_costuri);
+            dfs_hamilton(lista_costuri[nod][i].first, viz, nr_noduri_vizitate + 1, cost + lista_costuri[nod][i].second, cost_min);
         if (nr_noduri_vizitate == nr_noduri - 1 && lista_costuri[nod][i].first == 0)
             if (cost + lista_costuri[nod][i].second < cost_min || cost_min == 0)
                 cost_min = cost + lista_costuri[nod][i].second;
     }
     viz[nod] = 0;
 }
-int Graf::cicluhamilton(vector <vector <pair <int, int>>>& lista_costuri) {
+int Graf::cicluhamilton() {
     vector <int> viz(nr_noduri, 0);
     int cost_min = 0;
-    dfs_hamilton(0, viz, 0, 0, cost_min, lista_costuri);
+    dfs_hamilton(0, viz, 0, 0, cost_min);
     return cost_min;
 }
 bool Graf::bfs_cuplaj(vector <int>& pereche_U, vector <int>& pereche_V, vector <int>& dist) {
